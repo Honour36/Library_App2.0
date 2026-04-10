@@ -1,0 +1,27 @@
+{
+  "expo": {
+    "name": "NUST Library",
+    "slug": "nust-campus-library",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./src/assets/icon.png",
+    "splash": {
+      "backgroundColor": "#185FA5"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "zw.ac.nust.library"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#185FA5"
+      },
+      "package": "zw.ac.nust.library"
+    },
+    "plugins": [
+      "expo-secure-store",
+      "expo-document-picker",
+      "expo-file-system"
+    ]
+  }
+}
