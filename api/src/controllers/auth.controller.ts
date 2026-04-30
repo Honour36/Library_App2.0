@@ -9,18 +9,18 @@ const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
 
 export const register = async (req: Request, res: Response) => {
   try {
-    const { email, password, full_name, department } = req.body;
+    const { email, password, full_name, department, student_id, role } = req.body;
 
     if (!email || !password || !full_name) {
       return res.status(400).json({ message: 'Missing required fields' });
     }
 
     // Check if user exists
-    const { data: existingUser } = await supabase
+    const { data: existingUser, error: checkError } = await supabase
       .from('users')
       .select('id')
       .eq('email', email)
-      .single();
+      .maybeSingle();
 
     if (existingUser) {
       return res.status(400).json({ message: 'User already exists' });
@@ -35,8 +35,9 @@ export const register = async (req: Request, res: Response) => {
           email, 
           full_name, 
           department, 
+          student_id,
           password_hash,
-          role: 'student' // Default role
+          role: role || 'student'
         }
       ])
       .select()

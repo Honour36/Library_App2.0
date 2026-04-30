@@ -1,107 +1,208 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import { Alert, Image, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Bookmark, ChevronRight, CloudUpload, FolderOpen, Settings2 } from 'lucide-react-native';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../../navigation/RootNavigator';
 import { useAuthStore } from '../../store/authStore';
-import { useQuery } from '@tanstack/react-query';
-import bookmarksApi from '../../api/bookmarksApi';
-import * as LucideIcons from 'lucide-react-native';
+import { useStudentStore } from '../../store/studentStore';
+import { colors, radius, shadows, spacing, typography } from '../../theme/designSystem';
 
-const { 
-  LogOut, ChevronRight, Lock, User, FileText, Bookmark 
-} = LucideIcons as any;
+const SETTINGS = [
+  'Edit Profile',
+  'Notification Preferences',
+  'Update Academic Info',
+  'Reading Preferences',
+  'Help & Support',
+] as const;
 
 export default function ProfileScreen() {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { user, logout } = useAuthStore();
-  const { data: bookmarks } = useQuery({
-    queryKey: ['bookmarks'],
-    queryFn: bookmarksApi.getBookmarks
-  });
+  const { program, faculty, yearOfStudy, readingScore, booksRead, hoursRead } = useStudentStore();
 
-  const getInitials = (name: string) => {
-    return name?.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
-  };
-
-  const handleLogout = () => {
-    Alert.alert('Sign Out', 'Are you sure you want to log out?', [
+  const signOut = () =>
+    Alert.alert('Logout', 'Do you want to log out?', [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Log Out', style: 'destructive', onPress: logout }
+      { text: 'Logout', style: 'destructive', onPress: logout },
     ]);
-  };
 
   return (
-    <ScrollView style={s.container}>
-      <View style={s.header}>
-        <View style={s.avatar}>
-          <Text style={s.avatarText}>{getInitials(user?.full_name || '')}</Text>
-        </View>
-        <Text style={s.name}>{user?.full_name}</Text>
-        <Text style={s.email}>{user?.email}</Text>
-        <View style={s.roleBadge}>
-          <Text style={s.roleText}>{user?.role?.toUpperCase()}</Text>
-        </View>
-      </View>
+    <SafeAreaView style={styles.container}>
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <Text style={styles.title}>Profile</Text>
 
-      <View style={s.statsRow}>
-        <View style={s.statItem}>
-          <Text style={s.statValue}>{bookmarks?.length || 0}</Text>
-          <Text style={s.statLabel}>Saved</Text>
+        <View style={styles.hero}>
+          <View style={styles.avatar}>
+            {user?.avatar_uri ? (
+              <Image source={{ uri: user.avatar_uri }} style={styles.avatarImage} />
+            ) : (
+              <Text style={styles.avatarText}>{(user?.full_name || 'T')[0]}</Text>
+            )}
+          </View>
+          <Text style={styles.name}>{user?.full_name || 'Tatenda Moyo'}</Text>
+          <Text style={styles.handle}>@{user?.student_id || 'T221045B'}</Text>
+          <Text numberOfLines={1} style={styles.meta}>{program || 'Software Engineering'} • {yearOfStudy || 'Year 3'}</Text>
+          <Text numberOfLines={1} style={styles.meta}>{faculty || user?.department || 'Faculty of Engineering'}</Text>
         </View>
-        <View style={[s.statItem, s.statBorder]}>
-          <Text style={s.statValue}>0</Text>
-          <Text style={s.statLabel}>Downloads</Text>
+
+        <View style={styles.quickActions}>
+          <TouchableOpacity onPress={() => navigation.navigate('Bookmarks')} style={styles.quickCard}>
+            <View style={styles.quickIconWrap}><Bookmark size={18} color={colors.primary} /></View>
+            <Text style={styles.quickTitle}>Saved Reads</Text>
+            <Text style={styles.quickText}>Pinned, bookmarked, and reading lists</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => navigation.navigate('Upload')} style={styles.quickCard}>
+            <View style={styles.quickIconWrap}><CloudUpload size={18} color={colors.primary} /></View>
+            <Text style={styles.quickTitle}>Upload</Text>
+            <Text style={styles.quickText}>Share notes and resources with students</Text>
+          </TouchableOpacity>
         </View>
-        <View style={s.statItem}>
-          <Text style={s.statValue}>{user?.department ? 1 : 0}</Text>
-          <Text style={s.statLabel}>Department</Text>
+
+        <TouchableOpacity onPress={() => navigation.navigate('MyUploads')} style={styles.linkRow}>
+          <View style={styles.settingLeft}>
+            <FolderOpen size={18} color={colors.primary} />
+            <Text style={styles.linkText}>My Uploads</Text>
+          </View>
+          <ChevronRight size={18} color={colors.textMuted} />
+        </TouchableOpacity>
+
+        <Text style={styles.sectionTitle}>Reading Stats</Text>
+        <View style={styles.statsRow}>
+          <StatCard value={`${booksRead}`} label="Completed" />
+          <StatCard value={`${readingScore}`} label="Score" />
+          <StatCard value={`${hoursRead}h`} label="Hours" />
         </View>
-      </View>
 
-      <View style={s.section}>
-        <Text style={s.sectionTitle}>Account Settings</Text>
-        <MenuButton icon={<User size={20} color="#666" />} label="Edit Profile" />
-        <MenuButton icon={<Lock size={20} color="#666" />} label="Change Password" />
-        <MenuButton icon={<Bookmark size={20} color="#666" />} label="Saved Documents" />
-      </View>
-
-      <TouchableOpacity style={s.logoutBtn} onPress={handleLogout}>
-        <LogOut color="#ef4444" size={20} />
-        <Text style={s.logoutText}>Sign Out</Text>
-      </TouchableOpacity>
-
-      <Text style={s.version}>Version 1.0.0 (NUST-BUILD)</Text>
-    </ScrollView>
+        <Text style={styles.sectionTitle}>Settings</Text>
+        <View style={styles.settingsPanel}>
+          {SETTINGS.map((item) => (
+            <TouchableOpacity
+              key={item}
+              style={styles.settingRow}
+              onPress={() => {
+                if (item === 'Edit Profile') {
+                  navigation.navigate('EditProfile');
+                }
+              }}
+            >
+              <View style={styles.settingLeft}>
+                <Settings2 size={16} color={colors.textMuted} />
+                <Text style={styles.settingText}>{item}</Text>
+              </View>
+              <ChevronRight size={16} color={colors.textMuted} />
+            </TouchableOpacity>
+          ))}
+          <TouchableOpacity onPress={signOut} style={styles.settingRow}>
+            <View style={styles.settingLeft}>
+              <Settings2 size={16} color={colors.error} />
+              <Text style={styles.logoutText}>Logout</Text>
+            </View>
+            <ChevronRight size={16} color={colors.error} />
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
-const MenuButton = ({ icon, label }: { icon: any, label: string }) => (
-  <TouchableOpacity style={s.menuItem}>
-    <View style={s.menuLeft}>
-      {icon}
-      <Text style={s.menuLabel}>{label}</Text>
+function StatCard({ value, label }: { value: string; label: string }) {
+  return (
+    <View style={styles.statCard}>
+      <Text style={styles.statValue}>{value}</Text>
+      <Text style={styles.statLabel}>{label}</Text>
     </View>
-    <ChevronRight size={20} color="#ccc" />
-  </TouchableOpacity>
-);
+  );
+}
 
-const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f9f9f9' },
-  header: { padding: 32, alignItems: 'center', backgroundColor: '#fff' },
-  avatar: { width: 80, height: 80, borderRadius: 40, backgroundColor: '#185FA5', alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
-  avatarText: { color: '#fff', fontSize: 28, fontWeight: 'bold' },
-  name: { fontSize: 22, fontWeight: 'bold', color: '#111', marginBottom: 4 },
-  email: { fontSize: 14, color: '#666', marginBottom: 12 },
-  roleBadge: { paddingHorizontal: 12, paddingVertical: 4, borderRadius: 12, backgroundColor: '#eff6ff' },
-  roleText: { color: '#185FA5', fontSize: 12, fontWeight: 'bold' },
-  statsRow: { flexDirection: 'row', backgroundColor: '#fff', marginTop: 1, paddingVertical: 20, borderTopWidth: 1, borderTopColor: '#f0f0f0' },
-  statItem: { flex: 1, alignItems: 'center' },
-  statBorder: { borderLeftWidth: 1, borderRightWidth: 1, borderColor: '#f0f0f0' },
-  statValue: { fontSize: 18, fontWeight: 'bold', color: '#111' },
-  statLabel: { fontSize: 12, color: '#666', marginTop: 4 },
-  section: { marginTop: 24, paddingHorizontal: 20 },
-  sectionTitle: { fontSize: 14, fontWeight: 'bold', color: '#666', marginBottom: 12, marginLeft: 4, textTransform: 'uppercase' },
-  menuItem: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, backgroundColor: '#fff', borderRadius: 12, marginBottom: 8 },
-  menuLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  menuLabel: { fontSize: 16, color: '#333' },
-  logoutBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 40, padding: 16 },
-  logoutText: { color: '#ef4444', fontSize: 16, fontWeight: 'bold' },
-  version: { textAlign: 'center', color: '#ccc', fontSize: 12, marginBottom: 40 }
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background },
+  content: { padding: 16, paddingBottom: 120 },
+  title: { ...typography.h1, marginBottom: spacing.lg },
+  hero: {
+    alignItems: 'center',
+    backgroundColor: colors.backgroundMuted,
+    borderRadius: 20,
+    padding: spacing.xl,
+    marginBottom: spacing.lg,
+  },
+  avatar: {
+    width: 82,
+    height: 82,
+    borderRadius: radius.pill,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.md,
+  },
+  avatarText: { color: colors.surface, fontSize: 28, fontWeight: '700' },
+  avatarImage: { width: '100%', height: '100%', borderRadius: radius.pill },
+  name: { ...typography.h2, marginBottom: spacing.xs },
+  handle: { ...typography.caption, marginBottom: spacing.sm },
+  meta: { ...typography.body, color: colors.textMuted, marginBottom: 2 },
+  quickActions: { flexDirection: 'row', gap: 12, marginBottom: spacing.xl },
+  quickCard: {
+    flex: 1,
+    backgroundColor: colors.backgroundMuted,
+    borderRadius: 18,
+    padding: 16,
+    minHeight: 132,
+  },
+  quickIconWrap: {
+    width: 38,
+    height: 38,
+    borderRadius: radius.pill,
+    backgroundColor: colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.md,
+    ...shadows.card,
+  },
+  quickTitle: { fontSize: 15, fontWeight: '700', color: colors.textPrimary, marginBottom: 6 },
+  quickText: { ...typography.caption, lineHeight: 18 },
+  linkRow: {
+    minHeight: 56,
+    backgroundColor: colors.backgroundMuted,
+    borderRadius: 18,
+    paddingHorizontal: 16,
+    marginBottom: spacing.xl,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  linkText: { fontSize: 15, fontWeight: '700', color: colors.textPrimary },
+  sectionTitle: { ...typography.h2, marginBottom: spacing.md },
+  statsRow: { flexDirection: 'row', gap: 12, marginBottom: spacing.xl },
+  statCard: {
+    flex: 1,
+    backgroundColor: colors.backgroundMuted,
+    borderRadius: 18,
+    alignItems: 'center',
+    paddingVertical: spacing.lg,
+  },
+  statValue: { fontSize: 18, fontWeight: '700', color: colors.primary, marginBottom: spacing.xs },
+  statLabel: { ...typography.caption, textAlign: 'center' },
+  settingsPanel: {
+    backgroundColor: colors.backgroundMuted,
+    borderRadius: 20,
+    overflow: 'hidden',
+    marginBottom: 12,
+  },
+  settingRow: {
+    minHeight: 56,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  settingLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    flex: 1,
+  },
+  settingText: { fontSize: 14, fontWeight: '600', color: colors.textPrimary },
+  logoutText: { fontSize: 14, fontWeight: '700', color: colors.error },
 });

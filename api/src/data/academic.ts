@@ -1,0 +1,151 @@
+export const academicCatalog = {
+  faculties: [
+    {
+      name: 'Faculty of Engineering',
+      programs: [
+        'Chemical Engineering',
+        'Civil and Water Engineering',
+        'Electronic Engineering',
+        'Industrial and Manufacturing Engineering',
+        'Fibre and Polymer Materials Engineering',
+      ],
+      departments: [
+        'Chemical Engineering',
+        'Civil and Water Engineering',
+        'Electronic Engineering',
+        'Industrial and Manufacturing Engineering',
+        'Fibre and Polymer Materials Engineering',
+      ],
+    },
+    {
+      name: 'Faculty of Commerce (Business & Economic Sciences)',
+      programs: [
+        'Accounting',
+        'Actuarial Science',
+        'Banking',
+        'Finance',
+        'Marketing',
+        'Insurance and Risk Management',
+      ],
+      departments: [
+        'Accounting',
+        'Actuarial Science',
+        'Banking',
+        'Finance',
+        'Marketing',
+        'Insurance and Risk Management',
+      ],
+    },
+    {
+      name: 'Faculty of Applied Sciences',
+      programs: [
+        'Applied Biology and Biochemistry',
+        'Applied Chemistry',
+        'Applied Mathematics',
+        'Applied Physics',
+        'Computer Science',
+        'Informatics',
+        'Statistics and Operations Research',
+        'Biotechnology',
+        'Radiography',
+        'Sport Science and Coaching',
+      ],
+      departments: [
+        'Applied Biology and Biochemistry',
+        'Applied Chemistry',
+        'Applied Mathematics',
+        'Applied Physics',
+        'Computer Science',
+        'Informatics',
+        'Statistics and Operations Research',
+        'Biotechnology',
+        'Radiography',
+        'Sport Science and Coaching',
+      ],
+    },
+    {
+      name: 'Faculty of Built Environment',
+      programs: [
+        'Architecture',
+        'Quantity Surveying',
+        'Property Development & Estate Management',
+      ],
+      departments: [
+        'Architecture',
+        'Quantity Surveying',
+        'Property Development & Estate Management',
+      ],
+    },
+    {
+      name: 'Faculty of Medicine',
+      programs: ['Bachelor of Medicine, Bachelor of Surgery (MBBS)'],
+      departments: [
+        'Pathology',
+        'Surgery',
+        'Community Medicine',
+        'Nursing and Midwifery Sciences',
+      ],
+    },
+    {
+      name: 'Faculty of Environmental Science',
+      programs: [
+        'Environmental Health',
+        'Environmental Science',
+        'Forest Resources and Wildlife Management',
+        'Geospatial Sciences',
+      ],
+      departments: [
+        'Environmental Health',
+        'Environmental Science',
+        'Forest Resources and Wildlife Management',
+        'Geospatial Sciences',
+      ],
+    },
+    {
+      name: 'Faculty of Agricultural Science and Technology',
+      programs: [
+        'Agricultural Information Technology',
+        'Agricultural Genetics and Cell Technology',
+        'Agricultural Engineering',
+        'Agribusiness, Economics and Management',
+        'Sustainable Food Production',
+      ],
+      departments: [
+        'Agricultural Information Technology',
+        'Agricultural Genetics and Cell Technology',
+        'Agricultural Engineering',
+        'Agribusiness, Economics and Management',
+        'Sustainable Food Production',
+      ],
+    },
+    {
+      name: 'Faculty of Communication and Information Science',
+      programs: [
+        'Journalism and Media Studies',
+        'Library and Information Science',
+        'Records and Archives Management',
+        'Publishing Studies',
+      ],
+      departments: [
+        'Journalism and Media Studies',
+        'Library and Information Science',
+        'Records and Archives Management',
+        'Publishing Studies',
+      ],
+    },
+    {
+      name: 'Faculty of Science and Technology Education',
+      programs: [
+        'Art, Design and Technology Education',
+        'Science, Mathematics and Technology Education',
+        'Technical and Engineering Education and Training',
+      ],
+      departments: [
+        'Art, Design and Technology Education',
+        'Science, Mathematics and Technology Education',
+        'Technical and Engineering Education and Training',
+      ],
+    },
+  ],
+  years: ['1st Year', '2nd Year', '3rd Year', '4th Year', '5th Year', 'Postgrad'],
+} as const;

@@ -1,141 +1,179 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, Alert } from 'react-native';
-import { useAuthStore } from '../../store/authStore';
-import authApi from '../../api/authApi';
+import React, { useMemo, useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { GraduationCap, Lock, Mail, User } from 'lucide-react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import authApi from '../../api/authApi';
 import { AuthStackParamList } from '../../navigation/RootNavigator';
+import { useAuthStore } from '../../store/authStore';
+import { useStudentStore } from '../../store/studentStore';
+import { colors, radius, shadows, spacing, typography } from '../../theme/designSystem';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'Register'>;
 
-const DEPARTMENTS = [
-  'Computer Science', 'Electrical Engineering', 'Mechanical Engineering',
-  'Civil Engineering', 'Law', 'Business', 'Applied Sciences', 'Architecture'
-];
+const EMAIL_REGEX = /^n\d{8}[a-z]@students\.nust\.ac\.zw$/i;
+const PASSWORD_REGEX = /^(?=.*[A-Z])(?=.*\d).{8,}$/;
+const USERNAME_REGEX = /^[A-Za-z0-9 ]{3,20}$/;
 
 export default function RegisterScreen({ navigation }: Props) {
-  const [formData, setFormData] = useState({
-    full_name: '',
-    student_id: '',
-    department: DEPARTMENTS[0],
-    email: '',
-    password: '',
-    confirmPassword: ''
-  });
+  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const setAuth = useAuthStore(state => state.setAuth);
+  const setAuth = useAuthStore((state) => state.setAuth);
+  const setDraftProfile = useStudentStore((state) => state.setDraftProfile);
 
-  const handleRegister = async () => {
-    const { full_name, email, password, confirmPassword, department } = formData;
+  const canSubmit = useMemo(
+    () =>
+      USERNAME_REGEX.test(username.trim()) &&
+      EMAIL_REGEX.test(email.trim()) &&
+      PASSWORD_REGEX.test(password) &&
+      password === confirmPassword,
+    [confirmPassword, email, password, username]
+  );
 
-    if (!full_name || !email || !password || !confirmPassword) {
-      Alert.alert('Error', 'Please fill all required fields');
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      Alert.alert('Error', 'Passwords do not match');
+  const register = async () => {
+    if (!canSubmit) {
+      Alert.alert('Invalid form', 'Check username, email, and password.');
       return;
     }
 
     setLoading(true);
     try {
+      const studentNumber = email.split('@')[0];
       const response = await authApi.register({
-        full_name,
-        email,
+        full_name: username.trim(),
+        email: email.trim(),
         password,
-        department,
-        student_id: formData.student_id
+        student_id: studentNumber,
+        role: 'student',
       });
-      
+      await setDraftProfile({ username: username.trim() });
       await setAuth(response.user, response.token);
-      // Auth state change will trigger navigation in RootNavigator
     } catch (error: any) {
-      Alert.alert('Error', error.response?.data?.message || 'Registration failed');
+      Alert.alert('Sign up failed', error.response?.data?.message || 'Unable to create account.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <ScrollView contentContainerStyle={s.container}>
-      <Text style={s.title}>Join NUST Library</Text>
-      
-      <TextInput
-        style={s.input}
-        placeholder="Full Name"
-        value={formData.full_name}
-        onChangeText={(v) => setFormData({...formData, full_name: v})}
-      />
+    <SafeAreaView style={styles.container}>
+      <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+          <View style={styles.header}>
+            <View style={styles.logoWrap}>
+              <GraduationCap size={32} color={colors.surface} />
+            </View>
+            <Text style={styles.title}>Create your account</Text>
+          </View>
 
-      <TextInput
-        style={s.input}
-        placeholder="Student ID (Optional)"
-        value={formData.student_id}
-        onChangeText={(v) => setFormData({...formData, student_id: v})}
-      />
+          <View style={styles.card}>
+            <Field label="Username" icon={<User size={18} color={colors.textMuted} />}>
+              <TextInput placeholder="Tatenda Moyo" placeholderTextColor={colors.textMuted} style={styles.input} value={username} onChangeText={setUsername} />
+            </Field>
+            <Text style={styles.helper}>3-20 chars, no special characters</Text>
 
-      <View style={s.pickerContainer}>
-        <Text style={s.label}>Department</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          {DEPARTMENTS.map(dept => (
-            <TouchableOpacity 
-              key={dept} 
-              onPress={() => setFormData({...formData, department: dept})}
-              style={[s.deptBadge, formData.department === dept && s.deptBadgeActive]}
-            >
-              <Text style={[s.deptText, formData.department === dept && s.deptTextActive]}>{dept}</Text>
+            <Field label="Student Email" icon={<Mail size={18} color={colors.textMuted} />}>
+                <TextInput autoCapitalize="none" keyboardType="email-address" placeholder="n02428401b@students.nust.ac.zw" placeholderTextColor={colors.textMuted} style={styles.input} value={email} onChangeText={setEmail} />
+            </Field>
+            <Text style={styles.helper}>Must match NUST email format</Text>
+
+            <Field label="Password" icon={<Lock size={18} color={colors.textMuted} />}>
+              <TextInput secureTextEntry placeholder="Minimum 8 chars, 1 uppercase, 1 number" placeholderTextColor={colors.textMuted} style={styles.input} value={password} onChangeText={setPassword} />
+            </Field>
+
+            <Field label="Confirm Password" icon={<Lock size={18} color={colors.textMuted} />}>
+              <TextInput secureTextEntry placeholder="Repeat password" placeholderTextColor={colors.textMuted} style={styles.input} value={confirmPassword} onChangeText={setConfirmPassword} />
+            </Field>
+
+            <TouchableOpacity disabled={!canSubmit || loading} onPress={register} style={[styles.primaryButton, (!canSubmit || loading) && styles.disabledButton]}>
+              {loading ? <ActivityIndicator color={colors.surface} /> : <Text style={styles.primaryButtonText}>CREATE ACCOUNT</Text>}
             </TouchableOpacity>
-          ))}
+
+            <TouchableOpacity onPress={() => navigation.navigate('Login')} style={styles.loginLink}>
+              <Text style={styles.loginText}>Already have an account? <Text style={styles.loginAccent}>Login</Text></Text>
+            </TouchableOpacity>
+          </View>
         </ScrollView>
-      </View>
-
-      <TextInput
-        style={s.input}
-        placeholder="Email (@nust.ac.zw)"
-        autoCapitalize="none"
-        keyboardType="email-address"
-        value={formData.email}
-        onChangeText={(v) => setFormData({...formData, email: v})}
-      />
-
-      <TextInput
-        style={s.input}
-        placeholder="Password"
-        secureTextEntry
-        value={formData.password}
-        onChangeText={(v) => setFormData({...formData, password: v})}
-      />
-
-      <TextInput
-        style={s.input}
-        placeholder="Confirm Password"
-        secureTextEntry
-        value={formData.confirmPassword}
-        onChangeText={(v) => setFormData({...formData, confirmPassword: v})}
-      />
-
-      <TouchableOpacity style={s.button} onPress={handleRegister} disabled={loading}>
-        {loading ? <ActivityIndicator color="#fff" /> : <Text style={s.buttonText}>Register</Text>}
-      </TouchableOpacity>
-
-      <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-        <Text style={s.linkText}>Already have an account? Login</Text>
-      </TouchableOpacity>
-    </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
-const s = StyleSheet.create({
-  container: { padding: 24, flexGrow: 1, backgroundColor: '#fff', justifyContent: 'center' },
-  title: { fontSize: 28, fontWeight: 'bold', color: '#185FA5', marginBottom: 32, textAlign: 'center' },
-  input: { backgroundColor: '#f5f5f5', padding: 16, borderRadius: 12, marginBottom: 16, fontSize: 16 },
-  label: { fontSize: 14, color: '#666', marginBottom: 8 },
-  pickerContainer: { marginBottom: 16 },
-  deptBadge: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: '#f0f0f0', marginRight: 8 },
-  deptBadgeActive: { backgroundColor: '#185FA5' },
-  deptText: { color: '#666' },
-  deptTextActive: { color: '#fff' },
-  button: { backgroundColor: '#185FA5', padding: 18, borderRadius: 12, alignItems: 'center', marginTop: 16 },
-  buttonText: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
-  linkText: { color: '#185FA5', textAlign: 'center', marginTop: 24, fontSize: 16 }
+function Field({ label, icon, children }: { label: string; icon: React.ReactNode; children: React.ReactNode }) {
+  return (
+    <View style={styles.field}>
+      <Text style={styles.label}>{label}</Text>
+      <View style={styles.inputShell}>
+        {icon}
+        {children}
+      </View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  flex: { flex: 1 },
+  container: { flex: 1, backgroundColor: colors.background },
+  content: { padding: spacing.xl, paddingBottom: spacing.hero },
+  header: { alignItems: 'center', marginVertical: spacing.xl },
+  logoWrap: {
+    width: 76,
+    height: 76,
+    borderRadius: radius.pill,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.md,
+  },
+  title: { ...typography.h1 },
+  card: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    padding: spacing.xl,
+    borderWidth: 1,
+    borderColor: colors.border,
+    ...shadows.card,
+  },
+  field: { marginBottom: spacing.md },
+  label: { ...typography.label, marginBottom: spacing.sm },
+  inputShell: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.background,
+    borderRadius: radius.sm,
+    paddingHorizontal: spacing.lg,
+    minHeight: 52,
+  },
+  input: { flex: 1, fontSize: 14, color: colors.textPrimary },
+  helper: { ...typography.caption, color: colors.error, marginTop: -spacing.sm, marginBottom: spacing.md },
+  primaryButton: {
+    marginTop: spacing.lg,
+    height: 50,
+    borderRadius: radius.sm,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  disabledButton: { opacity: 0.45 },
+  primaryButtonText: { color: colors.surface, fontSize: 14, fontWeight: '700' },
+  loginLink: { alignItems: 'center', marginTop: spacing.lg },
+  loginText: { ...typography.caption },
+  loginAccent: { color: colors.primary, fontWeight: '700' },
 });

@@ -29,8 +29,41 @@ export const getCategories = async () => {
   return response.data;
 };
 
+export const uploadDocument = async (formData: FormData) => {
+  const client = await getClient();
+  const response = await client.post('/documents/upload', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+  return response.data;
+};
+
+export const updateDocument = async (
+  id: string,
+  payload: {
+    title: string;
+    author?: string;
+    academic_year?: string;
+    description?: string;
+  }
+) => {
+  const client = await getClient();
+  const response = await client.put(`/documents/${id}`, payload);
+  return response.data;
+};
+
+export const deleteDocument = async (id: string) => {
+  const client = await getClient();
+  const response = await client.delete(`/documents/${id}`);
+  return response.data;
+};
+
 export default {
   getDocuments,
   getDocumentById,
-  getCategories
+  getCategories,
+  uploadDocument,
+  updateDocument,
+  deleteDocument
 };
